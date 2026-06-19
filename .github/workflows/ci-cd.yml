@@ -36,6 +36,12 @@ jobs:
     # Solo en push a main (no en Pull Requests).
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # Gate de aprobación humana: el environment "production" tiene a Echeva26 como
+    # reviewer obligatorio. GitHub PAUSA aquí y envía un email pidiendo aprobación;
+    # el deploy solo sigue cuando se aprueba con un clic. Ver docs/auto-fix.md.
+    environment:
+      name: production
+      url: https://gestion-invitaciones.vercel.app
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

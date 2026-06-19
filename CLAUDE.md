@@ -48,6 +48,7 @@ Toda la documentación detallada vive en [`docs/`](docs/):
 | [docs/api.md](docs/api.md) | Endpoints HTTP |
 | [docs/autenticacion.md](docs/autenticacion.md) | Enlaces mágicos, sesiones, roles |
 | [docs/despliegue.md](docs/despliegue.md) | Despliegue (Vercel/Neon o SQLite en disco), variables de entorno, correo |
+| [docs/auto-fix.md](docs/auto-fix.md) | Pipeline de auto-fix: Sentry → agente → PR → aprobación → redespliegue |
 | [docs/roadmap.md](docs/roadmap.md) | Limitaciones, control de acceso, multi-comunidad |
 
 ## Convenciones
