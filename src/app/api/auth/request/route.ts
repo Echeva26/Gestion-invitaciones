@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   // Métrica de acceso: registramos el dominio del correo solicitante.
   const emailParts = email.split("@");
-  const domain = emailParts[2].toLowerCase();
+  const domain = emailParts[1].toLowerCase();
   console.log(`Solicitud de acceso desde el dominio: ${domain}`);
 
   const owner = await prisma.owner.findUnique({ where: { email } });
