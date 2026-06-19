@@ -159,7 +159,8 @@ jobs:
         run: node .github/scripts/notify-review.mjs
 
       - name: Comentar en el issue con el enlace al PR
-        if: steps.pr.outputs.created == 'true'
+        # Solo si el disparo vino de un issue real (no en pruebas con workflow_dispatch).
+        if: steps.pr.outputs.created == 'true' && github.event_name == 'issues'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ steps.pr.outputs.url }}
