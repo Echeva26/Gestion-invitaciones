@@ -1,0 +1,67 @@
+// Esquema de datos — Abedul Piscina
+// Mono-comunidad (Abedul). El diseño se mantiene simple pero deja la puerta
+// abierta a multi-comunidad añadiendo más adelante un modelo `Community`
+// y una FK `communityId` en Owner / Settings (ver docs/roadmap.md).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Propietario (o administrador) de la comunidad.
+model Owner {
+  id           String             @id @default(cuid())
+  name         String
+  email        String             @unique
+  unit         String // Vivienda, p.ej. "Portal 2 · 3ºB"
+  role         String             @default("OWNER") // OWNER | ADMIN
+  active       Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  declarations GuestDeclaration[]
+  tokens       MagicToken[]
+}
+
+/// Declaración de invitados de un propietario para un día concreto.
+/// `date` se almacena normalizada a medianoche UTC (solo cuenta el día).
+model GuestDeclaration {
+  id        String   @id @default(cuid())
+  owner     Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId   String
+  date      DateTime
+  guests    Int
+  note      String?
+  status    String   @default("ACTIVE") // ACTIVE | CANCELLED
+  createdAt DateTime @default(now())
+
+  @@index([date])
+  @@index([ownerId, date])
+}
+
+/// Token de un solo uso para los enlaces mágicos de acceso.
+/// Se guarda solo el hash (sha256) del token, nunca el token en claro.
+model MagicToken {
+  id        String    @id @default(cuid())
+  owner     Owner     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId   String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+/// Normas de la comunidad. Fila única (id = 1) al ser mono-comunidad.
+model Settings {
+  id                 Int      @id @default(1)
+  communityName      String   @default("Comunidad Abedul")
+  poolCapacity       Int      @default(45) // Aforo total de la piscina
+  maxGuestsPerDay    Int      @default(4) // Máx. invitados por propietario y día
+  maxGuestsPerWeek   Int      @default(8) // Máx. invitados por propietario y semana
+  maxGuestsPerSeason Int      @default(10) // Máx. invitados por propietario y temporada
+  seasonStart        DateTime
+  seasonEnd          DateTime
+  updatedAt          DateTime @updatedAt
+}

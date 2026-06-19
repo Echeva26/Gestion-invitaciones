@@ -1,0 +1,52 @@
+name: CI/CD
+
+# En cada push a main: tests + build, y si pasan, deploy a producción en Vercel.
+# En cada Pull Request: solo tests + build (no despliega).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests y build
+    runs-on: ubuntu-latest
+    env:
+      # Valores ficticios: las pruebas no tocan la BD y el build no consulta datos
+      # (las páginas son dinámicas). Prisma generate solo necesita que existan.
+      DATABASE_URL: postgresql://user:password@localhost:5432/ci
+      AUTH_SECRET: ci-dummy-secret-0000000000000000000000000000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci # dispara postinstall → prisma generate
+      - run: npm test
+      - run: npm run build
+
+  deploy:
+    name: Deploy a Vercel (producción)
+    needs: test
+    # Solo en push a main (no en Pull Requests).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Instalar Vercel CLI
+        run: npm i -g vercel@latest
+      - name: Descargar configuración y variables de entorno de Vercel
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Build de producción
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Desplegar
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
