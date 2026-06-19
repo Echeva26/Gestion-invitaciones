@@ -22,6 +22,7 @@ export function toUtcDay(input: string | Date): Date {
 }
 
 /**
+ * Recibe un objeto Date en UTC y devuelve la fecha en formato "YYYY-MM-DD".
  * Devuelve "YYYY-MM-DD" leyendo los componentes en UTC. Estable sea cual sea
  * la zona horaria del servidor.
  */
