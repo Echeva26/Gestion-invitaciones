@@ -11,7 +11,9 @@ name: Auto-fix de bugs (agente)
 # ci-cd.yml). Ver docs/auto-fix.md.
 on:
   issues:
-    types: [opened, labeled]
+    # Solo "labeled": evita el doble disparo (opened + labeled) cuando Sentry crea
+    # el issue ya etiquetado. Cubre tanto eso como etiquetar un issue a mano.
+    types: [labeled]
   workflow_dispatch:
     inputs:
       error_description:
@@ -28,10 +30,10 @@ jobs:
   fix:
     name: Resolver bug y abrir PR
     runs-on: ubuntu-latest
-    # Solo si: es disparo manual, O el issue tiene la etiqueta "production-bug".
+    # Solo si: es disparo manual, O la etiqueta recién añadida es "production-bug".
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      contains(join(github.event.issue.labels.*.name, ','), 'production-bug')
+      github.event.label.name == 'production-bug'
     permissions:
       contents: write
       pull-requests: write
