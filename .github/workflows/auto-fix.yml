@@ -62,25 +62,24 @@ jobs:
           git config user.email "actions@github.com"
           echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
 
-      - name: Instalar Claude Code CLI
-        run: npm install -g @anthropic-ai/claude-code
+      - name: Instalar aider (agente de código basado en OpenAI)
+        run: pipx install aider-chat
 
       - name: El agente investiga y escribe el fix
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           # Instrucciones estáticas (controladas por nosotros, sin expansión de shell).
           cat > /tmp/prompt.txt <<'PROMPT_EOF'
           Eres un ingeniero que arregla un bug en producción de esta web app (Next.js 16 + Prisma + PostgreSQL).
 
           TU TAREA:
-          1. Investiga la causa raíz leyendo el código relevante.
+          1. Investiga la causa raíz leyendo el código relevante (usa el mapa del repo).
           2. Aplica el arreglo MÍNIMO y correcto editando los ficheros necesarios.
-          3. Verifica que pasa: ejecuta "npm test" y "npm run build".
-          4. Si añade lógica nueva, añade o ajusta un test en src/lib/*.test.ts cuando tenga sentido.
+          3. Asegúrate de que "npm test" pasa.
+          4. Si añades lógica nueva, añade o ajusta un test en src/lib/*.test.ts cuando tenga sentido.
 
           REGLAS ESTRICTAS:
-          - NO ejecutes git, gh, ni ningún comando que haga push, merge o deploy. Solo edita ficheros y ejecuta npm test / npm run build.
           - No toques secretos ni variables de entorno.
           - Mantén el estilo y las convenciones del proyecto (ver CLAUDE.md).
           - Al terminar, escribe un RESUMEN claro en español: qué fallaba, qué cambiaste y por qué. Ese resumen es lo que verá el revisor humano por email.
@@ -92,11 +91,18 @@ jobs:
           printf '%s\n' "$BUG_CONTEXT" >> /tmp/prompt.txt
           printf -- '---\n' >> /tmp/prompt.txt
 
-          claude -p "$(cat /tmp/prompt.txt)" \
-            --output-format text \
-            --dangerously-skip-permissions \
-            --allowedTools "Edit,Write,Read,Bash,Grep,Glob" \
-            | tee /tmp/agent-summary.txt
+          # aider edita los ficheros en el árbol de trabajo (NO commitea: lo hace el workflow).
+          # --auto-test hace que itere hasta que "npm test" pase. Sin sandbox de shell salvo el test-cmd.
+          aider \
+            --model gpt-4o \
+            --yes-always \
+            --no-auto-commits \
+            --no-stream \
+            --no-analytics \
+            --auto-test \
+            --test-cmd "npm test" \
+            --message "$(cat /tmp/prompt.txt)" \
+            2>&1 | tee /tmp/agent-summary.txt
 
       - name: Verificar tests y build tras el fix
         run: |

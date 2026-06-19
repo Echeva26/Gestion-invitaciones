@@ -57,13 +57,15 @@ environment `production` pidiendo tu aprobación. Nada llega a producción sin t
 
 ## Checklist para activarlo (lo que debes hacer tú)
 
-### 1. Clave de API de Anthropic (obligatorio para el agente)
-1. Crea una API key en <https://console.anthropic.com/> (Settings → API Keys).
+### 1. Clave de API de OpenAI (obligatorio para el agente)
+El agente usa **aider** con el modelo `gpt-4o` de OpenAI.
+1. Crea una API key en <https://platform.openai.com/api-keys>.
 2. Guárdala como secret del repo:
    ```bash
-   gh secret set ANTHROPIC_API_KEY --repo Echeva26/Gestion-invitaciones --body "sk-ant-..."
+   gh secret set OPENAI_API_KEY --repo Echeva26/Gestion-invitaciones --body "sk-proj-..."
    ```
    > Es de pago por uso (céntimos por ejecución del agente).
+   > El modelo se cambia en `.github/workflows/auto-fix.yml` (`--model`).
 
 ### 2. Sentry (detección automática de bugs)
 1. Crea una cuenta gratuita en <https://sentry.io/> y un proyecto **Next.js**.
@@ -93,7 +95,9 @@ environment `production` pidiendo tu aprobación. Nada llega a producción sin t
 
 - **Coste acotado**: el agente solo corre al detectarse/etiquetarse un bug; `concurrency`
   evita varios a la vez sobre el mismo issue.
-- **Sin auto-merge ni auto-deploy**: regla explícita en el prompt + el gate del environment.
-- El agente trabaja en runner efímero con `--dangerously-skip-permissions` (aislado), pero
-  tiene **prohibido** ejecutar git/gh/deploy y solo puede editar ficheros y correr tests.
-- Si el agente no encuentra arreglo, no abre PR (no molesta).
+- **Sin auto-merge ni auto-deploy**: el agente (aider) corre con `--no-auto-commits`, así que
+  solo edita ficheros; el commit/push/PR lo hace el workflow y el deploy lo gobierna el gate.
+- `--auto-test` hace que aider itere hasta que `npm test` pase; el workflow además verifica
+  `npm test` + `npm run build` antes de abrir el PR (si falla, no abre PR).
+- El contexto del bug se pasa como **dato** (no se interpola en el shell) para evitar inyección.
+- Si el agente no produce cambios, no abre PR (no molesta).
