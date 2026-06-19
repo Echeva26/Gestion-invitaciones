@@ -31,3 +31,4 @@ prisma/*.db
 *.pem
 npm-debug.log*
 .vscode/
+.aider*
