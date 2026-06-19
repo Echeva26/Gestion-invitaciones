@@ -21,9 +21,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
-      - run: npm ci # dispara postinstall → prisma generate
+      # npm install (no npm ci): el lockfile generado en macOS omite las
+      # variantes opcionales nativas de Linux (p.ej. @emnapi/*), y npm ci
+      # —estricto— fallaría. npm install reconcilia y dispara postinstall.
+      - run: npm install --no-audit --no-fund # dispara postinstall → prisma generate
       - run: npm test
       - run: npm run build
 
@@ -40,7 +43,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - name: Instalar Vercel CLI
         run: npm i -g vercel@latest
